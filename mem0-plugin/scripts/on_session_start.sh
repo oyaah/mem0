@@ -11,6 +11,16 @@
 # even if jq is missing or stdin is malformed.
 set -uo pipefail
 
+if [ -n "${MEM0_DEBUG:-}" ]; then
+  mkdir -p "$HOME/.mem0" && exec 2>>"$HOME/.mem0/hooks.log"
+fi
+
+# Skip the bootstrap entirely if no API key is configured -- the agent
+# would otherwise be told to call mem0 MCP tools that will all fail.
+if [ -z "${MEM0_API_KEY:-}" ]; then
+  exit 0
+fi
+
 INPUT=$(cat)
 SOURCE=$(echo "$INPUT" | jq -r '.source // "startup"' 2>/dev/null || echo "startup")
 

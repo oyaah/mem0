@@ -27,6 +27,16 @@ _handler = logging.StreamHandler(sys.stderr)
 _handler.setFormatter(logging.Formatter("[mem0-capture] %(message)s"))
 log.addHandler(_handler)
 
+if os.environ.get("MEM0_DEBUG"):
+    _log_dir = os.path.expanduser("~/.mem0")
+    try:
+        os.makedirs(_log_dir, exist_ok=True)
+        _file_handler = logging.FileHandler(os.path.join(_log_dir, "hooks.log"))
+        _file_handler.setFormatter(logging.Formatter("[mem0-capture] %(asctime)s %(message)s"))
+        log.addHandler(_file_handler)
+    except OSError:
+        pass
+
 API_URL = "https://api.mem0.ai"
 MAX_TAIL_LINES = 500
 MAX_USER_MESSAGES = 30
@@ -149,7 +159,7 @@ def build_content(state: dict, source: str) -> str:
     return "\n".join(parts)
 
 
-def store_memory(api_key: str, content: str, user_id: str, source: str) -> bool:
+def store_memory(api_key: str, content: str, user_id: str, source: str, session_id: str = "") -> bool:
     """Store session state as a memory via the Mem0 REST API."""
     body = {
         "messages": [
@@ -159,6 +169,7 @@ def store_memory(api_key: str, content: str, user_id: str, source: str) -> bool:
         "metadata": {
             "type": "session_state",
             "source": source,
+            "session_id": session_id,
         },
     }
 
@@ -207,6 +218,7 @@ def main():
         log.debug("No transcript_path provided")
         return
 
+    session_id = hook_input.get("session_id", "")
     user_id = os.environ.get("MEM0_USER_ID", os.environ.get("USER", "default"))
 
     lines = tail_lines(transcript_path, MAX_TAIL_LINES)
@@ -228,7 +240,7 @@ def main():
         len(state["bash_commands"]),
     )
 
-    store_memory(api_key, content, user_id, source)
+    store_memory(api_key, content, user_id, source, session_id)
 
 
 if __name__ == "__main__":
