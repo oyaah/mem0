@@ -157,6 +157,20 @@ After installing, confirm the MCP server is connected:
 - **Mem0 SDK Skill** — Guides the AI on how to integrate the Mem0 SDK (Python & TypeScript) into your applications.
 - **Memory Protocol Skill** — Codex-specific skill that instructs the agent to retrieve relevant memories at task start, store learnings on completion, and capture session state before context loss. Complements the lifecycle hooks on Codex.
 
+## Optional: tune categories for coding workflows
+
+mem0 auto-tags every memory with one or more `categories` from a project-level list. The default list is consumer-oriented (`food`, `hobbies`, `music` …) — useful for chat assistants, less so for code. A one-shot script in this plugin replaces it with a coding-focused taxonomy:
+
+```bash
+# Dry-run first -- prints current vs proposed, no changes:
+python mem0-plugin/scripts/setup_coding_categories.py
+
+# Actually write:
+python mem0-plugin/scripts/setup_coding_categories.py --apply
+```
+
+Requires the `mem0ai` Python SDK (`pip install mem0ai`) and `MEM0_API_KEY` set. New memories will then auto-tag against `architecture_decisions`, `anti_patterns`, `task_learnings`, `tooling_setup`, `bug_fixes`, `coding_conventions`, `user_preferences`. Re-run with a different list any time; `project.update(custom_categories=[...])` always replaces.
+
 ## MCP Tools
 
 Once installed, the following tools are available:

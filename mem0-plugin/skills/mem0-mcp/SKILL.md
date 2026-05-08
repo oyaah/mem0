@@ -97,6 +97,8 @@ Extract key learnings and store them using the `add_memory` tool:
 - **Environment/setup discoveries** -> Include metadata `{"type": "environmental"}`
 - **Conventions established** -> Include metadata `{"type": "convention"}`
 
+> `metadata.type` (which you set explicitly) and `categories` (which the platform auto-tags after the project's custom-category list — see `scripts/setup_coding_categories.py`) are complementary. Always set `metadata.type` for explicit filtering; the platform fills in `categories` on its own. Don't try to set `categories` on `add_memory` calls — per-request overrides aren't supported on the managed API.
+
 Memories can be as detailed as needed -- include full context, reasoning, code snippets, file paths, and examples. Longer, searchable memories are more valuable than vague one-liners.
 
 ### Use `infer=False` for already-structured content
