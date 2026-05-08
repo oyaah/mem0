@@ -20,6 +20,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _identity import resolve_user_id
@@ -45,6 +46,10 @@ MAX_TAIL_LINES = 500
 MAX_USER_MESSAGES = 30
 MAX_BASH_COMMANDS = 20
 MAX_ASSISTANT_TEXT = 10000
+# session_state captures churn fast (active codebase, files in flight). Past
+# ~3 months they're stale noise. Durable facts (decisions, conventions) are
+# stored separately by the agent without an expiration_date.
+SESSION_STATE_EXPIRY_DAYS = 90
 
 
 def tail_lines(filepath: str, n: int) -> list[str]:
@@ -164,6 +169,7 @@ def build_content(state: dict, source: str) -> str:
 
 def store_memory(api_key: str, content: str, user_id: str, source: str, session_id: str = "") -> bool:
     """Store session state as a memory via the Mem0 REST API."""
+    expires = (date.today() + timedelta(days=SESSION_STATE_EXPIRY_DAYS)).isoformat()
     body = {
         "messages": [
             {"role": "user", "content": content}
@@ -174,6 +180,7 @@ def store_memory(api_key: str, content: str, user_id: str, source: str, session_
             "source": source,
             "session_id": session_id,
         },
+        "expiration_date": expires,
     }
 
     data = json.dumps(body).encode("utf-8")
