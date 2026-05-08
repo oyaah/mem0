@@ -30,7 +30,10 @@ if [ -z "${MEM0_API_KEY:-}" ]; then
   exit 0
 fi
 
-USER_ID="${MEM0_USER_ID:-${USER:-default}}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_identity.sh
+. "$SCRIPT_DIR/_identity.sh"
+USER_ID="$MEM0_RESOLVED_USER_ID"
 
 cat <<EOF
 ## Memory check

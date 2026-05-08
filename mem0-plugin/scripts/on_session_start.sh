@@ -21,8 +21,23 @@ if [ -z "${MEM0_API_KEY:-}" ]; then
   exit 0
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_identity.sh
+. "$SCRIPT_DIR/_identity.sh"
+
 INPUT=$(cat)
 SOURCE=$(echo "$INPUT" | jq -r '.source // "startup"' 2>/dev/null || echo "startup")
+
+# Identity line is emitted before every bootstrap variant so the agent
+# uses the same user_id the hooks resolved. Without this, the agent's
+# search_memories/add_memory MCP calls may bind to a different bucket
+# than what the hooks write to.
+echo "## Mem0 Identity"
+echo ""
+echo "Active user_id: \`$MEM0_RESOLVED_USER_ID\`"
+echo ""
+echo "Always include \`{\"user_id\": \"$MEM0_RESOLVED_USER_ID\"}\` (wrapped in an \`AND\` clause) in every \`search_memories\` filter and as \`user_id\` on every \`add_memory\` call. This keeps memories under one bucket regardless of which machine you're on."
+echo ""
 
 if [ "$SOURCE" = "startup" ]; then
   cat <<'EOF'

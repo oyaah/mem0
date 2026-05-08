@@ -18,8 +18,11 @@ import json
 import logging
 import os
 import sys
-import urllib.request
 import urllib.error
+import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _identity import resolve_user_id
 
 log = logging.getLogger("mem0-capture")
 log.setLevel(logging.DEBUG)
@@ -219,7 +222,7 @@ def main():
         return
 
     session_id = hook_input.get("session_id", "")
-    user_id = os.environ.get("MEM0_USER_ID", os.environ.get("USER", "default"))
+    user_id = resolve_user_id()
 
     lines = tail_lines(transcript_path, MAX_TAIL_LINES)
     if not lines:
