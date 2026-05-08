@@ -99,6 +99,21 @@ Extract key learnings and store them using the `add_memory` tool:
 
 Memories can be as detailed as needed -- include full context, reasoning, code snippets, file paths, and examples. Longer, searchable memories are more valuable than vague one-liners.
 
+### Use `infer=False` for already-structured content
+
+When you've done the extraction work yourself — pre-compaction summaries, decisions, anti-patterns, conventions you've explicitly identified — pass `infer=False` so the platform stores your text verbatim instead of running a second extraction pass over it.
+
+```python
+add_memory(
+    messages=[{"role": "user", "content": "<your structured fact>"}],
+    user_id="<active user_id>",
+    metadata={"type": "decision"},
+    infer=False,
+)
+```
+
+Stick to one mode per distinct piece of content — don't mix `infer=True` (default) and `infer=False` for the same fact, you'll get duplicates. Default (`infer=True`) is right for raw conversational signal you want extracted; `infer=False` is right for pre-extracted structure.
+
 ## Before losing context
 
 If context is about to be compacted or the session is ending, store a comprehensive session summary:
