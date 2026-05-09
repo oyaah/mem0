@@ -81,53 +81,9 @@ await client.add(
 ```
 </CodeGroup>
 
-## Compare Retrieval Modes
+## Run a Temporal Search
 
-The easiest way to understand Temporal Reasoning is to compare the same query in two modes:
-
-- **Standard retrieval** with `temporal_reasoning=False`
-- **Temporal retrieval** with the default time-aware mode enabled
-
-### Mode 1: Standard Retrieval
-
-This is useful for broad semantic lookups, but it does not try to interpret `last week` against a timeline.
-
-<CodeGroup>
-```python Python
-results = client.search(
-    "what did I do last week?",
-    filters={"user_id": USER_ID},
-    reference_date=REFERENCE_DATE,
-    temporal_reasoning=False,
-)
-
-for item in results["results"]:
-    print(item["memory"])
-```
-
-```javascript JavaScript
-const results = await client.search("what did I do last week?", {
-  filters: { user_id: USER_ID },
-  referenceDate: REFERENCE_DATE,
-  temporalReasoning: false,
-});
-
-results.results.forEach((item) => console.log(item.memory));
-```
-</CodeGroup>
-
-**Illustrative output:**
-```text
-I finished the Q1 product review on March 10, 2025.
-I have a dentist appointment on April 18, 2025 at 2 PM.
-I am the product lead at Acme Corp.
-```
-
-That result set is semantically reasonable, but it is not yet behaving like a time-aware assistant.
-
-### Mode 2: Temporal Retrieval
-
-Now run the same query with temporal mode enabled. This is the default, so you can omit the flag.
+Temporal Reasoning is always on for v3 searches — no flag required. The pipeline detects time language in the query and uses stored temporal fields to rank results appropriately.
 
 <CodeGroup>
 ```python Python
@@ -138,12 +94,7 @@ results = client.search(
 )
 
 for item in results["results"]:
-    print(
-        item["memory"],
-        item.get("memory_type"),
-        item.get("event_date"),
-        item.get("temporal_surface"),
-    )
+    print(item["memory"], item["score"])
 ```
 
 ```javascript JavaScript
@@ -153,20 +104,20 @@ const results = await client.search("what did I do last week?", {
 });
 
 results.results.forEach((item) => {
-  console.log(item.memory, item.memoryType, item.eventDate, item.temporalSurface);
+  console.log(item.memory, item.score);
 });
 ```
 </CodeGroup>
 
 **Illustrative output:**
 ```text
-I finished the Q1 product review on March 10, 2025.  event  2025-03-10  Mar 10, 2025
+I finished the Q1 product review on March 10, 2025.
 ```
 
-The impact is not just better ranking. Mem0 is now using the query’s time intent plus the stored temporal fields to prefer the memory that fits `last week`.
+Mem0 uses the query’s time intent and the stored temporal metadata to rank the memory that fits `last week` higher. The April 18 appointment and the ongoing job title score lower because their temporal classification and date don’t match a historical range query.
 
 <Info icon="check">
-Expected behavior: with temporal mode on, the March 10 event should lead for `last week`, while the April 18 appointment and the ongoing job title should not dominate the answer.
+Expected behavior: the March 10 event leads for `last week`. The April 18 appointment and the ongoing Acme role score lower because their temporal type and date don’t match a historical range query.
 </Info>
 
 ## See the Three Query Shapes
@@ -200,7 +151,7 @@ upcoming = client.search(
 )
 
 for item in upcoming["results"]:
-    print(item["memory"], item.get("memory_type"), item.get("effective_plan_status"))
+    print(item["memory"], item["score"])
 ```
 
 ```javascript JavaScript
@@ -210,14 +161,14 @@ const upcoming = await client.search("what do I have coming up?", {
 });
 
 upcoming.results.forEach((item) => {
-  console.log(item.memory, item.memoryType, item.effectivePlanStatus);
+  console.log(item.memory, item.score);
 });
 ```
 </CodeGroup>
 
 **Illustrative output:**
 ```text
-I have a dentist appointment on April 18, 2025 at 2 PM.  plan  upcoming
+I have a dentist appointment on April 18, 2025 at 2 PM.
 ```
 
 <Warning>
@@ -237,7 +188,7 @@ current = client.search(
 )
 
 for item in current["results"]:
-    print(item["memory"], item.get("memory_type"), item.get("temporal_surface"))
+    print(item["memory"], item["score"])
 ```
 
 ```javascript JavaScript
@@ -247,22 +198,19 @@ const current = await client.search("where do I work right now?", {
 });
 
 current.results.forEach((item) => {
-  console.log(item.memory, item.memoryType, item.temporalSurface);
+  console.log(item.memory, item.score);
 });
 ```
 </CodeGroup>
 
 **Illustrative output:**
 ```text
-I am the product lead at Acme Corp.  state  ongoing
+I am the product lead at Acme Corp.
 ```
 
 ## Use the Right Controls
 
-There are two public controls that matter most in production:
-
-- `reference_date` anchors relative phrases like `last week`, `tomorrow`, and `right now`
-- `temporal_reasoning` lets you switch between standard retrieval and temporal retrieval for a specific request
+The main control for temporal retrieval is `reference_date`, which anchors relative phrases like `last week`, `tomorrow`, and `right now` to a known point in time. Without it, the server uses the current date.
 
 ### Deterministic tests and demos
 
@@ -281,27 +229,6 @@ client.search(
 await client.search("what did I do last week?", {
   filters: { user_id: USER_ID },
   referenceDate: "2025-03-21T00:00:00Z",
-});
-```
-</CodeGroup>
-
-### Standard retrieval for timeless queries
-
-Turn temporal mode off when a question is not time-sensitive.
-
-<CodeGroup>
-```python Python
-client.search(
-    "what is my job title?",
-    filters={"user_id": USER_ID},
-    temporal_reasoning=False,
-)
-```
-
-```javascript JavaScript
-await client.search("what is my job title?", {
-  filters: { user_id: USER_ID },
-  temporalReasoning: false,
 });
 ```
 </CodeGroup>
@@ -368,7 +295,6 @@ await client.search("what did we discuss last week?", {
 - Past questions can favor completed events instead of just semantically related memories.
 - Upcoming questions can surface scheduled plans instead of historical notes.
 - Current-state questions can keep stable facts available without letting them take over every search.
-- You can switch between standard retrieval and temporal retrieval per request with `temporal_reasoning`.
 
 ## Next Steps
 

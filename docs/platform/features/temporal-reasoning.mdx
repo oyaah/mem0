@@ -47,67 +47,13 @@ Mem0 normalizes temporal memories into a small set of developer-facing types:
 | `relationship` | A durable connection between people or entities | "Priya manages Jordan." |
 | `preference` | A stable preference or habit | "I prefer morning meetings." |
 
-On search responses, temporal fields are returned as top-level result attributes when Temporal Reasoning is active. The most useful ones are:
-
-- `memory_type`
-- `event_date`
-- `event_start`
-- `event_end`
-- `plan_status`
-- `effective_plan_status`
-- `time_precision`
-- `temporal_surface`
-- `reference_date_used`
-- `score_breakdown.temporal_boost`
+At search time, Temporal Reasoning influences how results are ranked — memories that match the temporal intent of the query receive a boost — but no temporal metadata is added to the API response. The ranking effect is transparent: results come back in the normal shape.
 
 ## Configure it
 
 ### Default behavior
 
-Temporal Reasoning is enabled by default for supported v3 searches and writes.
-
-### Per-request override
-
-Use `temporal_reasoning=False` when you want a specific call to behave like a normal semantic add or search.
-
-<CodeGroup>
-```python Python
-client.add(
-    [{"role": "user", "content": "Preferred language is English."}],
-    user_id="jordan",
-    temporal_reasoning=False,
-)
-
-results = client.search(
-    "preferred language",
-    filters={"user_id": "jordan"},
-    temporal_reasoning=False,
-)
-```
-
-```javascript JavaScript
-await client.add(
-  [{ role: "user", content: "Preferred language is English." }],
-  { userId: "jordan", temporalReasoning: false }
-);
-
-const results = await client.search("preferred language", {
-  filters: { user_id: "jordan" },
-  temporalReasoning: false,
-});
-```
-
-```bash cURL
-curl -X POST "https://api.mem0.ai/v3/memories/search/" \
-  -H "Authorization: Token your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "preferred language",
-    "filters": { "user_id": "jordan" },
-    "temporal_reasoning": false
-  }'
-```
-</CodeGroup>
+Temporal Reasoning is enabled by default for all v3 searches and writes. There is no per-request toggle — the pipeline runs automatically when temporal structure is detectable in the memory text or query.
 
 ### Anchor imports and tests
 
@@ -208,7 +154,7 @@ results = client.search(
 )
 
 for item in results["results"]:
-    print(item["memory"], item.get("memory_type"), item.get("event_date"))
+    print(item["memory"], item["score"])
 ```
 
 ```javascript JavaScript
@@ -218,7 +164,7 @@ const results = await client.search("what did I do last week?", {
 });
 
 results.results.forEach((item) => {
-  console.log(item.memory, item.memoryType, item.eventDate);
+  console.log(item.memory, item.score);
 });
 ```
 </CodeGroup>
@@ -249,8 +195,7 @@ results.results.forEach((item) => {
 
 ## Verify the feature is working
 
-- Run a temporal search and confirm results include top-level fields like `memory_type`, `event_date`, or `effective_plan_status`.
-- Repeat the same query with `temporal_reasoning=False` and confirm ranking changes for time-sensitive prompts.
+- Run a temporal search with a time-aware query ("what did I do last week?") and confirm the result ordering matches temporal intent — the memory that fits the time window should rank first.
 - Use `reference_date` in test queries so relative phrases resolve consistently.
 - For backfilled data, confirm imported memories use the expected chronology after you set `timestamp`.
 
@@ -260,7 +205,6 @@ results.results.forEach((item) => {
 - Pass `timestamp` during historical imports so ingestion time does not become the only time anchor.
 - Keep search scoped with `filters` so time-aware ranking runs inside the right entity boundary.
 - Use `reference_date` in automated tests and reproducible demos.
-- Disable Temporal Reasoning only for clearly timeless lookups such as static profile fields.
 
 <CardGroup cols={2}>
   <Card title="Memory Timestamps" icon="calendar" href="/platform/features/timestamp">

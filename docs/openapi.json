@@ -2093,11 +2093,6 @@
 										"type": "boolean",
 										"default": true,
 										"description": "When `false`, stores each message verbatim without running the extraction LLM."
-									},
-									"temporal_reasoning": {
-										"type": "boolean",
-										"nullable": true,
-										"description": "Enable V3 temporal reasoning write-path metadata. Defaults to the deployment setting."
 									}
 								}
 							},
@@ -2240,11 +2235,6 @@
 										],
 										"nullable": true,
 										"description": "Optional query anchor time for relative temporal interpretation. Accepts Unix epoch, YYYY-MM-DD, or ISO datetime."
-									},
-									"temporal_reasoning": {
-										"type": "boolean",
-										"nullable": true,
-										"description": "Enable V3 temporal intent and temporal scoring. Defaults to the deployment setting."
 									}
 								}
 							},
@@ -2329,18 +2319,8 @@
 											"score_breakdown": {
 												"semantic": 0.78,
 												"bm25": 0.0,
-												"entity": 0.0,
-												"temporal_boost": 0.04
+												"entity": 0.0
 											},
-											"memory_type": "event",
-											"event_date": "2026-01-15",
-											"event_start": "2026-01-15",
-											"event_end": "2026-01-15",
-											"plan_status": null,
-											"effective_plan_status": null,
-											"time_precision": "day",
-											"temporal_surface": "Jan 15, 2026",
-											"reference_date_used": "2026-01-20",
 											"metadata": {},
 											"categories": [
 												"location"
